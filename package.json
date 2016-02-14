@@ -1,0 +1,21 @@
+{
+  "name": "mongotest",
+  "version": "0.0.1",
+  "description": "A test of node and mongo and http",
+  "private":true,
+  "main": "test.js",
+  "scripts": {
+    "test": "run"
+  },
+  "keywords": [
+    "test",
+    "mongo",
+    "bom"
+  ],
+  "author": "Valberg Larusson",
+  "license": "BSD",
+  "dependencies": {
+    "kerberos": "0.0.18",
+    "mongodb": "~2.1.5"
+  }
+}
