@@ -1,5 +1,6 @@
 /**
  * This is a script to fetch forecasts from BOM and save to the MongoDB WeatherDB.
+ * @deprecated senda
  *
  * @param ID Pass as an argument when running the script the BOM ID for the document
  */
@@ -10,13 +11,14 @@ var parser = require('xml2json');
 
 var MongoClient = mongodb.MongoClient;
 var mongourl = 'mongodb://localhost:27017/weatherdb';
-var ftp = new JSFtp({host: "ftp.bom.gov.au"});
+var ftp = new JSFtp({host: "ftp.bom.gov.au", debugMode:true});
 
 var args = process.argv.slice(2);
 if(args.length == 0) {
   console.log('Please provide a valid ID');
   process.exit(1);
 }
+process.exit(1);
 
 /**
  * Fetch the forecast document for the FTP site in XML format
@@ -57,16 +59,25 @@ ftp.get('/anon/gen/fwo/' + args[0] + '.xml', function(err, socket) {
         var period = areas[i]['forecast-period'];
         if (period instanceof Array) { // This is the forecast
           for (var j = 0, leng = period.length; j < leng; j++) {
+
             var date = period[j]['start-time-local'].slice(0, 10);
-            insertWeather({
+            var document = {
               "_id": data.product.amoc.identifier + '-' + date + '-' + period[j].text.type,
               "bomId": data.product.amoc.identifier,
               "date": date,
               "aac": aac,
               "type": period[j].text.type,
-              "location": location,
-              "forecast": period[j].text['$t']
-            });
+              "location": location
+            };
+
+            var forecastArray = period[j].text['$t'].split(/[a-zA-Z0-9]+: /).reverse();
+            forecastArray.pop();
+            var key = period[j].text['$t'].match(/Winds:|Seas:|Weather:/g).reverse();
+            for(var k=0; k < forecastArray.length; k++){
+              document[key[k].slice(0,key[k].length-1)] = forecastArray[k];
+            }
+
+            insertWeather(document);
           }
         }
 
@@ -107,11 +118,9 @@ ftp.get('/anon/gen/fwo/' + args[0] + '.xml', function(err, socket) {
   socket.on("close", function(hadErr) {
     if (hadErr)
       console.error('There was an error retrieving the file.');
-      //process.exit(1);
   });
   socket.resume();
 });
-
 
 /**
  * Connect to MongoDB and insert the forecast as a JSON object

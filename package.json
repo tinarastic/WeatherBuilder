@@ -2,8 +2,8 @@
   "name": "mongotest",
   "version": "0.0.1",
   "description": "A test of node and mongo and http",
-  "private":true,
-  "main": "test.js",
+  "private": true,
+  "main": "import.js",
   "scripts": {
     "test": "run"
   },
@@ -16,6 +16,7 @@
   "license": "BSD",
   "dependencies": {
     "kerberos": "0.0.18",
-    "mongodb": "~2.1.5"
+    "mongodb": "~2.1.5",
+    "node-libcurl": "^0.8.0"
   }
 }
