@@ -2,11 +2,9 @@
  * Created by valberg on 14/03/2016.
  */
 
-
 /**
  * Read all the weather files and upsert all the areas we are able to, and make a note of the ones we cant.
  */
-
 const mongodb = require('mongodb'),
     assert = require('assert'),
     exec = require('child_process').exec,
