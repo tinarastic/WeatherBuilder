@@ -33,6 +33,7 @@ MongoClient.connect(mongourl, function (err, db) {
                 db.close();
                 // Finished downloading, now run the file attributes update to mongoDB
                 require('./update-file-attributes');
+                require('./upsert-marine');
             })
         });
 });

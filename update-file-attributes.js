@@ -69,7 +69,7 @@ function readAsync(file) {
                 db.close();
             });
         });
-        fs.unlink(folder+file); // Delete the files once they are processed
+        //fs.unlink(folder+file); // Delete the files once they are processed
     });
 }
 

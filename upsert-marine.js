@@ -23,37 +23,41 @@ MongoClient.connect(mongourl, function(err, db) {
     db.collection(collection).find({service:{$in: ["WSM-FCW","WSM-FLW"]}}).project({bomId:1,_id:0}).toArray(function(err,document){
         for(var i=0; i<document.length; i++){
             fs.readFile(folder+document[i].bomId+'.xml', 'utf8', function(err, contents) {
-                try {
-                    var data = parser.toJson(contents, {reversible: false, object: false});
-                } catch (err) {
-                    console.error('Error parsing the file, something went wrong: ' + err);
-                }
-                var str = data.replace(/\$t/g, "description");
-                var obj = JSON.parse(str);
-
-                /** @todo We need to determine the type of document here so we can treat it appropriately */
-
-                var area = obj.product.forecast.area;
-                for (var i = 0, len = area.length; i < len; i++) {
-                    area[i].identifier = obj.product.amoc.identifier;
-                    area[i]._id = area[i].aac + '_';
-                    if (area[i]['forecast-period'] != undefined && area[i]['forecast-period'] instanceof Array) {
-                        for (var j = 0, leng = area[i]['forecast-period'].length; j < leng; j++) {
-                            counta++;
-                            var entry = JSON.parse(JSON.stringify(area[i]));
-                            entry['forecast-period'] = area[i]['forecast-period'][j];
-                            formatForecastPeriod(entry);
-                            upsertForecast(db,entry);
-                        }
-                    } else if (area[i]['forecast-period'] != undefined) {
-                        counta++;
-                        formatForecastPeriod(area[i]);
-                        upsertForecast(db,area[i]);
-                    } else {
-                        /** @todo could be a storm warning */
+                if(err) {
+                    // console.log(err);
+                } else {
+                    try {
+                        var data = parser.toJson(contents, {reversible: false, object: false});
+                    } catch (err) {
+                        console.error('Error parsing the file, something went wrong: ' + err);
                     }
-                }
-            });
+
+                    var str = data.replace(/\$t/g, "description");
+                    var obj = JSON.parse(str);
+
+                    /** @todo We need to determine the type of document here so we can treat it appropriately */
+
+                    var area = obj.product.forecast.area;
+                    for (var i = 0, len = area.length; i < len; i++) {
+                        area[i].identifier = obj.product.amoc.identifier;
+                        area[i]._id = area[i].aac + '_';
+                        if (area[i]['forecast-period'] != undefined && area[i]['forecast-period'] instanceof Array) {
+                            for (var j = 0, leng = area[i]['forecast-period'].length; j < leng; j++) {
+                                counta++;
+                                var entry = JSON.parse(JSON.stringify(area[i]));
+                                entry['forecast-period'] = area[i]['forecast-period'][j];
+                                formatForecastPeriod(entry);
+                                upsertForecast(db, entry);
+                            }
+                        } else if (area[i]['forecast-period'] != undefined) {
+                            counta++;
+                            formatForecastPeriod(area[i]);
+                            upsertForecast(db, area[i]);
+                        } else {
+                            /** @todo could be a storm warning */
+                        }
+                    }
+                }});
         }
     });
 });
@@ -64,7 +68,7 @@ function upsertForecast(db, d) {
         countb++;
         if(counta === countb) {
             db.close();
-            process.exit(0);
+            //process.exit(0);
         }
 
     });
