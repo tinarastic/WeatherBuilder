@@ -17,6 +17,7 @@ const folder = 'weather-files/',
 
 var MongoClient = mongodb.MongoClient;
 const mongourl = 'mongodb://localhost:27017/weatherdb';
+var counta = 0, countb = 0;
 
 MongoClient.connect(mongourl, function(err, db) {
     db.collection(collection).find({service:{$in: ["WSM-FCW","WSM-FLW"]}}).project({bomId:1,_id:0}).toArray(function(err,document){
@@ -38,12 +39,14 @@ MongoClient.connect(mongourl, function(err, db) {
                     area[i]._id = area[i].aac + '_';
                     if (area[i]['forecast-period'] != undefined && area[i]['forecast-period'] instanceof Array) {
                         for (var j = 0, leng = area[i]['forecast-period'].length; j < leng; j++) {
+                            counta++;
                             var entry = JSON.parse(JSON.stringify(area[i]));
                             entry['forecast-period'] = area[i]['forecast-period'][j];
                             formatForecastPeriod(entry);
                             upsertForecast(db,entry);
                         }
                     } else if (area[i]['forecast-period'] != undefined) {
+                        counta++;
                         formatForecastPeriod(area[i]);
                         upsertForecast(db,area[i]);
                     } else {
@@ -57,9 +60,13 @@ MongoClient.connect(mongourl, function(err, db) {
 
 function upsertForecast(db, d) {
     db.collection('marine_forecast').updateOne({"_id": d._id},d,{upsert:true}, function(err, results){
-        if(err){
-            console.error(new Error("Failed upserting forecast: " + err));
+        if(err) console.error(new Error("Failed upserting forecast: " + err));
+        countb++;
+        if(counta === countb) {
+            db.close();
+            process.exit(0);
         }
+
     });
 }
 
