@@ -92,10 +92,66 @@ function formatForecastPeriod(entry){
             for (var k = 0; k < forecastArray.length; k++) {
                 if(typeof key[k] != "undefined" ){
                     entry[key[k].slice(0, key[k].length - 1)] = forecastArray[k];
+                    if(key[k].slice(0, key[k].length - 1) == "Winds") {
+                        analyzeWind( entry );
+                    }
                 }
             }
         }
     }
 
 
+}
+
+function analyzeWind(entry){
+
+    winds = entry['Winds'].toLowerCase();
+
+    /**
+     * Some arbitrary conversions, the input is human after all
+     * @type {string}
+     */
+    winds = winds.replace(/ est /gi," east ");
+    winds = winds.replace(/ (below|about|over|up to) /gi," ");
+
+    var changesToWords = ['reaching','increases to']; // Words that mean that the wind will stay in the same quarter but change in speed
+    var changesRegx = "("+changesToWords.join("|")+")";
+
+
+    var vocabDirections = ['NorthWest','NorthEast','SouthEast','SouthWest','North','East','South','West','Variable'];
+    var dirsRegx = "("+vocabDirections.join("|")+")";
+    var speedRegx = "(\\d+ to \\d+|\\d+)";
+
+    var findWeatherRange = new RegExp("("+dirsRegx+" to "+dirsRegx+"|"+dirsRegx+"|"+changesRegx+")(\\w+|) " + speedRegx, "gi");
+    var weatherRange = winds.match(findWeatherRange);
+    if(weatherRange == null) return; // @todo log these anomalies for further analysis
+
+    var maxSpeed = 0;
+    var data = new Array();
+    for(var i = 0; i < weatherRange.length; i++){
+
+        var findDirections = new RegExp("("+dirsRegx+")", "gi");
+        var directions = weatherRange[i].match(findDirections);
+        if(directions == null) {
+            directions = weatherRange[i-1].match(findDirections);
+        }
+
+        var range = {};
+        range.direction = { from: directions[0]};
+        if(directions[1] != undefined) range.direction.to = directions[1];
+
+        var findSpeed = new RegExp("\\d+", "gi");
+        var speed = weatherRange[i].match(findSpeed);
+
+        if(maxSpeed < speed[0]) maxSpeed = speed[0];
+
+        range.speed = { from: speed[0] };
+        if(speed[1] != undefined) {
+            range.speed.to = speed[1];
+            if(maxSpeed < speed[1]) maxSpeed = speed[1];
+        }
+        data[i] = range;
+    }
+    entry['windData'] = data;
+    entry['maxWindSpeed'] = maxSpeed;
 }
